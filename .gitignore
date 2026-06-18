@@ -11,6 +11,8 @@
 !.yarn/releases
 !.yarn/versions
 
+eng.traineddata
+
 # testing
 /coverage
 
