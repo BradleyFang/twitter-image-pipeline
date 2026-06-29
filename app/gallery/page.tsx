@@ -1,4 +1,3 @@
-import { existsSync, readFileSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import Image from "next/image";
@@ -12,15 +11,6 @@ const ARCHIVE_FILE_PATH = path.join(
   "cache",
   "twitter-image-gallery.json",
 );
-const ENV_FILE_PATHS = [
-  path.join(/*turbopackIgnore: true*/ process.cwd(), ".env"),
-  path.join(/*turbopackIgnore: true*/ process.cwd(), ".env.local"),
-  path.join(/*turbopackIgnore: true*/ process.cwd(), ".env.development"),
-  path.join(
-    /*turbopackIgnore: true*/ process.cwd(),
-    ".env.development.local",
-  ),
-];
 
 type GalleryImage = {
   id: string;
@@ -42,50 +32,6 @@ type SavedImageArchive = {
   images: GalleryImage[];
   savedAt: string;
 };
-
-function getConfiguredAccountHandles() {
-  const handles = new Set<string>();
-  const addHandles = (value?: string) => {
-    value
-      ?.split(",")
-      .map((handle) => handle.trim().replace(/^@/, ""))
-      .filter(Boolean)
-      .filter((handle) => /^[A-Za-z0-9_]{1,15}$/.test(handle))
-      .forEach((handle) => handles.add(handle));
-  };
-
-  addHandles(process.env.TWITTER_IMAGE_ACCOUNTS);
-
-  for (const filePath of ENV_FILE_PATHS) {
-    if (!existsSync(filePath)) {
-      continue;
-    }
-
-    for (const line of readFileSync(filePath, "utf8").split(/\n/)) {
-      const match = line.match(/^\s*#?\s*TWITTER_IMAGE_ACCOUNTS\s*=\s*(.*)$/);
-
-      if (match) {
-        addHandles(match[1].split("#")[0].trim().replace(/^['"]|['"]$/g, ""));
-      }
-    }
-  }
-
-  return [...handles];
-}
-
-function filterImagesToKnownAccounts(images: GalleryImage[]) {
-  const knownHandles = new Set(
-    getConfiguredAccountHandles().map((handle) => handle.toLowerCase()),
-  );
-
-  if (knownHandles.size === 0) {
-    return images;
-  }
-
-  return images.filter(
-    (image) => image.username && knownHandles.has(image.username.toLowerCase()),
-  );
-}
 
 function isSavedImageArchive(value: unknown): value is SavedImageArchive {
   if (!value || typeof value !== "object") {
@@ -213,8 +159,7 @@ async function deleteSavedImage(formData: FormData) {
 export default async function GalleryPage() {
   await connection();
 
-  const savedImages = await readSavedImages();
-  const images = filterImagesToKnownAccounts(savedImages);
+  const images = await readSavedImages();
 
   return (
     <main className="min-h-screen bg-[#fbf8fb] text-[#211923]">

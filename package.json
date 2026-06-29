@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "submit:nonchalant": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/submit-nonchalant.mjs",
     "lint": "eslint"
   },
   "dependencies": {
